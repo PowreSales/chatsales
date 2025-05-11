@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pharmacy Sales</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <h2>Pharmacy Sales</h2>
+  <div class="card">
+    <div class="relative">
+      <label for="medicine">Medicine</label>
+      <input type="text" id="medicine" placeholder="Start typing medicine..." autocomplete="off">
+      <div id="autocomplete-list" class="autocomplete-suggestions"></div>
+    </div>
+    <div id="info"></div>
+    <div id="error" class="error"></div>
+    <label id="qtyLabel" for="quantity">Quantity</label>
+    <input type="number" id="quantity" min="1" value="1">
+    <button onclick="addItem()">Add Item</button>
+    <button onclick="clearCart()">Clear Cart</button>
+  </div>
+  <div id="items"></div>
+  <div id="cartSummary"></div>
+  <div class="card">
+    <label>Payment Method</label>
+    <select id="paymentMethod">
+      <option>Cash</option>
+      <option>Momo</option>
+    </select>
+    <button id="submitBtn" onclick="submitSale()">Submit Sale</button>
+  </div>
+  <script src="scripts.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('service-worker.js');
+      });
+    }
+  </script>
+</body>
+</html>
