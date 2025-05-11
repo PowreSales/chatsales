@@ -1,23 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#03dac6">
-  <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Pharmacy Sales</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <h2>Pharmacy Sales</h2>
 
   <div class="card">
-    <label for="medicine">Medicine</label>
-    <input type="text" id="medicine" placeholder="Start typing medicine...">
-    <div id="autocomplete-list" class="autocomplete-suggestions"></div>
+    <div class="relative">
+      <label for="medicine">Medicine</label>
+      <input type="text" id="medicine" placeholder="Start typing medicine..." autocomplete="off" />
+      <div id="autocomplete-list" class="autocomplete-suggestions"></div>
+    </div>
 
-    <label for="quantity" id="qtyLabel">Quantity</label>
-    <input type="number" id="quantity" value="1" min="1">
+    <div id="info"></div>
+    <div id="error" class="error"></div>
+
+    <label id="qtyLabel" for="quantity">Quantity</label>
+    <input type="number" id="quantity" min="1" value="1" />
 
     <button onclick="addItem()">Add Item</button>
     <button onclick="clearCart()">Clear Cart</button>
@@ -35,6 +38,6 @@
     <button id="submitBtn" onclick="submitSale()">Submit Sale</button>
   </div>
 
-  <script src="app.js"></script>
+  <script src="scripts.js"></script>
 </body>
 </html>
