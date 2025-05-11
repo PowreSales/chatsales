@@ -1,0 +1,13 @@
+{
+  "name": "Pharmacy Sales",
+  "short_name": "Pharmacy",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#121212",
+  "theme_color": "#03dac6",
+  "icons": [{
+    "src": "icon.png",
+    "sizes": "192x192",
+    "type": "image/png"
+  }]
+}
