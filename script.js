@@ -1,6 +1,7 @@
 let inventory = [];
 let items = [];
 
+// Debounce function for autocomplete
 function debounce(func, wait) {
   let timeout;
   return function (...args) {
@@ -9,52 +10,59 @@ function debounce(func, wait) {
   };
 }
 
+// Show error message
 function showError(message) {
   const errorDiv = document.getElementById("error");
   errorDiv.textContent = message;
   setTimeout(() => errorDiv.textContent = '', 3000);
 }
 
+// Show loading state
 function showLoading(isLoading) {
   const submitBtn = document.getElementById("submitBtn");
   submitBtn.disabled = isLoading;
   submitBtn.textContent = isLoading ? "Submitting..." : "Submit Sale";
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  inventory = [
-    { name: "Amoxicillin", price: 5, quantity: 20, costPrice: 3 },
-    { name: "Paracetamol", price: 2, quantity: 50, costPrice: 1 },
-    { name: "Amlodipine", price: 3, quantity: 30, costPrice: 2 },
-  ];
-});
+// Load inventory from Google Apps Script
+if (typeof google !== "undefined") {
+  google.script.run
+    .withSuccessHandler(data => inventory = data)
+    .withFailureHandler(error => showError("Failed to load inventory: " + error))
+    .getInventory();
+}
 
-const input = document.getElementById("medicine");
-const list = document.getElementById("autocomplete-list");
+const medicineInput = document.getElementById("medicine");
+const autocompleteList = document.getElementById("autocomplete-list");
 
-input.addEventListener("input", debounce(() => {
-  const term = input.value.trim().toLowerCase();
-  list.innerHTML = '';
-  if (!term) return;
-  const matches = inventory.filter(med => med.name.toLowerCase().startsWith(term)).slice(0, 10);
-  matches.forEach(med => {
+medicineInput.addEventListener("input", debounce(function () {
+  const value = this.value.toLowerCase();
+  autocompleteList.innerHTML = '';
+
+  if (!value) return;
+
+  const suggestions = inventory
+    .filter(item => item.name.toLowerCase().startsWith(value)) // prefix matching
+    .slice(0, 10);
+
+  suggestions.forEach(item => {
     const div = document.createElement("div");
     div.classList.add("autocomplete-suggestion");
-    div.textContent = med.name;
-    div.onclick = () => {
-      input.value = med.name;
-      list.innerHTML = '';
-      document.getElementById("qtyLabel").innerText = `Quantity (Available: ${med.quantity})`;
-      document.getElementById("info").innerText = `Unit Price: GHC ${med.price.toFixed(2)}`;
+    div.textContent = item.name;
+    div.onclick = function () {
+      medicineInput.value = item.name;
+      autocompleteList.innerHTML = '';
+      document.getElementById("qtyLabel").innerText = `Quantity (Available: ${item.quantity})`;
+      document.getElementById("info").innerText = `Unit Price: GHC ${item.price.toFixed(2)}`;
       document.getElementById("error").textContent = '';
     };
-    list.appendChild(div);
+    autocompleteList.appendChild(div);
   });
 }, 300));
 
 document.addEventListener("click", function (e) {
-  if (!input.contains(e.target) && !list.contains(e.target)) {
-    list.innerHTML = '';
+  if (!medicineInput.contains(e.target) && !autocompleteList.contains(e.target)) {
+    autocompleteList.innerHTML = '';
   }
 });
 
@@ -68,53 +76,78 @@ function addItem() {
     return;
   }
 
-  items.push({ name: item.name, quantity, unitPrice: item.price, costPrice: item.costPrice });
+  items.push({
+    name: item.name,
+    quantity: quantity,
+    unitPrice: item.price,
+    costPrice: item.costPrice
+  });
+
   document.getElementById("medicine").value = '';
   document.getElementById("quantity").value = 1;
   document.getElementById("info").textContent = '';
   document.getElementById("qtyLabel").innerText = 'Quantity';
+  document.getElementById("error").textContent = '';
+
   renderItems();
 }
 
 function renderItems() {
   const container = document.getElementById("items");
-  const summary = document.getElementById("cartSummary");
+  const summaryContainer = document.getElementById("cartSummary");
   container.innerHTML = '';
-  summary.innerHTML = '';
+  summaryContainer.innerHTML = '';
   let grandTotal = 0;
 
-  items.forEach((item, i) => {
+  items.forEach((item, index) => {
     const subtotal = item.quantity * item.unitPrice;
     grandTotal += subtotal;
+
     const div = document.createElement("div");
     div.className = "item";
-    div.innerHTML = `${item.name}
-      <button class="remove-btn" onclick="removeItem(${i})">Remove</button>`;
+    div.innerHTML = `
+      ${item.name}
+      <button class="remove-btn" onclick="removeItem(${index})">Remove</button>
+    `;
     container.appendChild(div);
   });
 
   if (items.length > 0) {
     const table = document.createElement("table");
-    table.innerHTML = `<thead>
-      <tr><th>Medicine</th><th>Qty</th><th>Unit Price</th><th>Subtotal</th></tr>
-      </thead><tbody></tbody>`;
+    table.innerHTML = `
+      <thead>
+        <tr>
+          <th>Medicine</th>
+          <th>Quantity</th>
+          <th>Unit Price</th>
+          <th>Subtotal</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    `;
     const tbody = table.querySelector("tbody");
 
     items.forEach(item => {
       const subtotal = item.quantity * item.unitPrice;
-      tbody.innerHTML += `<tr>
+      const row = document.createElement("tr");
+      row.innerHTML = `
         <td>${item.name}</td>
         <td>${item.quantity}</td>
         <td>GHC ${item.unitPrice.toFixed(2)}</td>
         <td>GHC ${subtotal.toFixed(2)}</td>
-      </tr>`;
+      `;
+      tbody.appendChild(row);
     });
 
-    tbody.innerHTML += `<tr class="total-row">
+    const totalRow = document.createElement("tr");
+    totalRow.className = "total-row";
+    totalRow.innerHTML = `
       <td colspan="3"><strong>Grand Total</strong></td>
       <td><strong>GHC ${grandTotal.toFixed(2)}</strong></td>
-    </tr>`;
-    summary.appendChild(table);
+    `;
+    tbody.appendChild(totalRow);
+
+    summaryContainer.appendChild(table);
   }
 }
 
@@ -128,10 +161,9 @@ function clearCart() {
     showError("Cart is already empty.");
     return;
   }
-  if (confirm("Clear all items in the cart?")) {
-    items = [];
-    renderItems();
-  }
+  if (!confirm("Clear all items in the cart?")) return;
+  items = [];
+  renderItems();
 }
 
 function submitSale() {
@@ -142,10 +174,20 @@ function submitSale() {
   if (!confirm("Are you sure you want to submit this sale?")) return;
 
   showLoading(true);
-  setTimeout(() => {
-    showLoading(false);
-    alert("Sale recorded (simulated)");
-    items = [];
-    renderItems();
-  }, 1000);
+  const paymentMethod = document.getElementById("paymentMethod").value;
+
+  if (typeof google !== "undefined") {
+    google.script.run
+      .withSuccessHandler(() => {
+        showLoading(false);
+        alert("Sale recorded.");
+        items = [];
+        renderItems();
+      })
+      .withFailureHandler(error => {
+        showLoading(false);
+        showError("Failed to submit sale: " + error);
+      })
+      .saveSales({ items, paymentMethod });
+  }
 }
